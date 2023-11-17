@@ -1,2 +1,8 @@
-fastapi
+fastapi~=0.104.1
+pydantic~=1.10.13
 uvicorn
+fschat[model_worker]==0.2.32
+numexpr~=2.8.7
+torch==2.0.1
+httpx[brotli,http2,socks]>=0.25.0
+vllm>=0.2.0; sys_platform == "linux"
