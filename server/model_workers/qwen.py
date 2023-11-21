@@ -1,12 +1,9 @@
-import json
 import sys
-
-from fastchat.conversation import Conversation
-from configs import TEMPERATURE
-from http import HTTPStatus
 from typing import List, Literal, Dict
 
 from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
 from server.model_workers.base import *
 from server.model_workers.base import ApiEmbeddingsParams
 
@@ -15,13 +12,13 @@ class QwenWorker(ApiModelWorker):
     DEFAULT_EMBED_MODEL = "text-embedding-v1"
 
     def __init__(
-        self,
-        *,
-        version: Literal["qwen-turbo", "qwen-plus"] = "qwen-turbo",
-        model_names: List[str] = ["qwen-api"],
-        controller_addr: str = None,
-        worker_addr: str = None,
-        **kwargs,
+            self,
+            *,
+            version: Literal["qwen-turbo", "qwen-plus"] = "qwen-turbo",
+            model_names: List[str] = ["qwen-api"],
+            controller_addr: str = None,
+            worker_addr: str = None,
+            **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
         kwargs.setdefault("context_len", 16384)
@@ -62,10 +59,10 @@ class QwenWorker(ApiModelWorker):
         result = []
         i = 0
         while i < len(params.texts):
-            texts = params.texts[i:i+25]
+            texts = params.texts[i:i + 25]
             resp = dashscope.TextEmbedding.call(
                 model=params.embed_model or self.DEFAULT_EMBED_MODEL,
-                input=texts, # 最大25行
+                input=texts,  # 最大25行
                 api_key=params.api_key,
             )
             if resp["status_code"] != 200:

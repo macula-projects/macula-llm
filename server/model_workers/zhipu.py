@@ -9,13 +9,13 @@ class ChatGLMWorker(ApiModelWorker):
     DEFAULT_EMBED_MODEL = "text_embedding"
 
     def __init__(
-        self,
-        *,
-        model_names: List[str] = ["zhipu-api"],
-        controller_addr: str = None,
-        worker_addr: str = None,
-        version: Literal["chatglm_turbo"] = "chatglm_turbo",
-        **kwargs,
+            self,
+            *,
+            model_names: List[str] = ["zhipu-api"],
+            controller_addr: str = None,
+            worker_addr: str = None,
+            version: Literal["chatglm_turbo"] = "chatglm_turbo",
+            **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
         kwargs.setdefault("context_len", 32768)
@@ -55,7 +55,7 @@ class ChatGLMWorker(ApiModelWorker):
                 if response["code"] == 200:
                     embeddings.append(response["data"]["embedding"])
                 else:
-                    return response # dict with code & msg
+                    return response  # dict with code & msg
         except Exception as e:
             return {"code": 500, "msg": f"对文本向量化时出错：{e}"}
 

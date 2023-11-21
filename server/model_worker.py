@@ -26,6 +26,7 @@ from fastapi import FastAPI
 from configs import (
     LLM_MODELS,
     LOG_PATH,
+    MODEL_PATH
 )
 from server.utils import get_model_worker_config, fschat_model_worker_address, fschat_controller_address, set_app_event
 
@@ -51,6 +52,8 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
     """
     import fastchat.constants
     import argparse
+    from fastchat.serve.model_worker import worker_id
+    
     fastchat.constants.LOGDIR = LOG_PATH
 
     parser = argparse.ArgumentParser()
@@ -133,8 +136,8 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
             # sys.modules["fastchat.serve.vllm_worker"].worker = worker
             sys.modules["fastchat.serve.vllm_worker"].logger.setLevel(log_level)
 
-        else:
-            from fastchat.serve.model_worker import app, GptqConfig, AWQConfig, ModelWorker, worker_id
+        elif kwargs["model_names"][0] in MODEL_PATH["llm_model"]:
+            from fastchat.serve.model_worker import app, GptqConfig, AWQConfig, ModelWorker
 
             args.gpus = "0"  # GPU的编号,如果有多个GPU，可以设置为"0,1,2,3"
             args.max_gpu_memory = "22GiB"
