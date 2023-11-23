@@ -1,14 +1,14 @@
-import json
-import time
 import hashlib
+import json
+import sys
+import time
+from typing import List, Literal, Dict
 
+from fastchat import conversation as conv
 from fastchat.conversation import Conversation
+
 from server.model_workers.base import *
 from server.utils import get_httpx_client
-from fastchat import conversation as conv
-import sys
-import json
-from typing import List, Literal, Dict
 
 
 def calculate_md5(input_string):
@@ -20,13 +20,13 @@ def calculate_md5(input_string):
 
 class BaiChuanWorker(ApiModelWorker):
     def __init__(
-        self,
-        *,
-        controller_addr: str = None,
-        worker_addr: str = None,
-        model_names: List[str] = ["baichuan-api"],
-        version: Literal["Baichuan2-53B"] = "Baichuan2-53B",
-        **kwargs,
+            self,
+            *,
+            controller_addr: str = None,
+            worker_addr: str = None,
+            model_names: List[str] = ["baichuan-api"],
+            version: Literal["Baichuan2-53B"] = "Baichuan2-53B",
+            **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
         kwargs.setdefault("context_len", 32768)
@@ -67,12 +67,12 @@ class BaiChuanWorker(ApiModelWorker):
                         yield {
                             "error_code": resp["code"],
                             "text": text
-                            }
+                        }
                     else:
                         yield {
                             "error_code": resp["code"],
                             "text": resp["msg"]
-                            }
+                        }
 
     def get_embeddings(self, params):
         # TODO: 支持embeddings

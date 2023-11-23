@@ -1,13 +1,14 @@
-import sys
-from fastchat.conversation import Conversation
-from server.model_workers.base import *
-from server.utils import get_httpx_client
-from cachetools import cached, TTLCache
 import json
-from fastchat import conversation as conv
 import sys
-from server.model_workers.base import ApiEmbeddingsParams
 from typing import List, Literal, Dict
+
+from cachetools import cached, TTLCache
+from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
+from server.model_workers.base import *
+from server.model_workers.base import ApiEmbeddingsParams
+from server.utils import get_httpx_client
 
 MODEL_VERSIONS = {
     "ernie-bot-4": "completions_pro",

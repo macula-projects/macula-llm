@@ -17,7 +17,7 @@ EMBEDDING_MODEL_OUTPUT_PATH = "output"
 
 # 要运行的 LLM 名称，可以包括本地模型和在线模型。
 # 第一个将作为 API 和 WEBUI 的默认模型
-LLM_MODELS = ["chatglm2-6b", "zhipu-api", "qianfan-api"]
+LLM_MODELS = ["chatglm3-6b", "zhipu-api", "qianfan-api"]
 
 # AgentLM模型的名称 (可以不指定，指定之后就锁定进入Agent之后的Chain的模型，不指定就是LLM_MODELS[0])
 Agent_MODEL = None
@@ -149,6 +149,7 @@ MODEL_PATH = {
         # 以下部分模型并未完全测试，仅根据fastchat和vllm模型的模型列表推定支持
         "chatglm2-6b": "THUDM/chatglm2-6b",
         "chatglm2-6b-32k": "THUDM/chatglm2-6b-32k",
+        "chatglm3-6b": "THUDM/chatglm3-6b",
 
         "baichuan2-13b": "baichuan-inc/Baichuan2-13B-Chat",
         "baichuan2-7b": "baichuan-inc/Baichuan2-7B-Chat",

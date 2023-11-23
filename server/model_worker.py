@@ -53,7 +53,7 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
     import fastchat.constants
     import argparse
     from fastchat.serve.model_worker import worker_id
-    
+
     fastchat.constants.LOGDIR = LOG_PATH
 
     parser = argparse.ArgumentParser()
@@ -69,7 +69,6 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
         worker = worker_class(model_names=args.model_names,
                               controller_addr=args.controller_address,
                               worker_addr=args.worker_address)
-        # sys.modules["fastchat.serve.base_model_worker"].worker = worker
         sys.modules["fastchat.serve.base_model_worker"].logger.setLevel(log_level)
     # 本地模型
     else:
@@ -133,7 +132,7 @@ def create_model_worker_app(log_level: str = "INFO", **kwargs) -> FastAPI:
                 conv_template=args.conv_template,
             )
             sys.modules["fastchat.serve.vllm_worker"].engine = engine
-            # sys.modules["fastchat.serve.vllm_worker"].worker = worker
+            sys.modules["fastchat.serve.vllm_worker"].worker = worker
             sys.modules["fastchat.serve.vllm_worker"].logger.setLevel(log_level)
 
         elif kwargs["model_names"][0] in MODEL_PATH["llm_model"]:

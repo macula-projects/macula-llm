@@ -14,6 +14,7 @@
 #  limitations under the License.
 
 import sys
+
 from configs.model_config import LLM_DEVICE
 
 # httpx 请求默认超时时间（秒）。如果加载模型或对话较慢，出现超时错误，可以适当加大该值。

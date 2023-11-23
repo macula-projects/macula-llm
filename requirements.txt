@@ -1,16 +1,24 @@
-fastapi
-pydantic
-uvicorn
-numexpr
-cachetools
+numexpr~=2.8.7
 httpx[brotli,http2,socks]>=0.25.0
-websockets
-torch==2.0.1
-fschat[model_worker]==0.2.32
-vllm>=0.2.0; sys_platform == "linux"
+
+fastapi>=0.104
+uvicorn~=0.23.1
+pydantic~=1.10.11
+
+fschat[model_worker]==0.2.33
+torch>=2.1.0
+vllm>=0.2.2; sys_platform == "linux"
 
 # online api libs
-zhipuai   # zhipuai
-dashscope>=1.10.0 # qwen
+# ==zhipuai
+zhipuai
+# ==qwen
+dashscope==1.13.3
+# ==qianfan
 #qianfan
-#volcengine>=1.0.106 # fangzhou
+cachetools~=5.3.2
+# ==fangzhou
+#volcengine>=1.0.106
+# ==xinhuo
+websockets~=12.0
+

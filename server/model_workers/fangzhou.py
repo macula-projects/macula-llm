@@ -1,8 +1,10 @@
-from fastchat.conversation import Conversation
-from server.model_workers.base import *
-from fastchat import conversation as conv
 import sys
 from typing import List, Literal, Dict
+
+from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
+from server.model_workers.base import *
 
 
 class FangZhouWorker(ApiModelWorker):
@@ -11,16 +13,16 @@ class FangZhouWorker(ApiModelWorker):
     """
 
     def __init__(
-        self,
-        *,
-        model_names: List[str] = ["fangzhou-api"],
-        controller_addr: str = None,
-        worker_addr: str = None,
-        version: Literal["chatglm-6b-model"] = "chatglm-6b-model",
-        **kwargs,
+            self,
+            *,
+            model_names: List[str] = ["fangzhou-api"],
+            controller_addr: str = None,
+            worker_addr: str = None,
+            version: Literal["chatglm-6b-model"] = "chatglm-6b-model",
+            **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
-        kwargs.setdefault("context_len", 16384) # TODO: 不同的模型有不同的大小
+        kwargs.setdefault("context_len", 16384)  # TODO: 不同的模型有不同的大小
         super().__init__(**kwargs)
         self.version = version
 

@@ -1,24 +1,26 @@
-from fastchat.conversation import Conversation
-from server.model_workers.base import *
-from fastchat import conversation as conv
-import sys
 import json
+import sys
+from typing import List, Dict
+
+from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
+from server.model_workers.base import *
 from server.model_workers.base import ApiEmbeddingsParams
 from server.utils import get_httpx_client
-from typing import List, Dict
 
 
 class MiniMaxWorker(ApiModelWorker):
     DEFAULT_EMBED_MODEL = "embo-01"
 
     def __init__(
-        self,
-        *,
-        model_names: List[str] = ["minimax-api"],
-        controller_addr: str = None,
-        worker_addr: str = None,
-        version: str = "abab5.5-chat",
-        **kwargs,
+            self,
+            *,
+            model_names: List[str] = ["minimax-api"],
+            controller_addr: str = None,
+            worker_addr: str = None,
+            version: str = "abab5.5-chat",
+            **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
         kwargs.setdefault("context_len", 16384)
@@ -62,13 +64,13 @@ class MiniMaxWorker(ApiModelWorker):
 
         with get_httpx_client() as client:
             response = client.stream("POST",
-                                    url.format(pro=pro, group_id=params.group_id),
-                                    headers=headers,
-                                    json=data)
+                                     url.format(pro=pro, group_id=params.group_id),
+                                     headers=headers,
+                                     json=data)
             with response as r:
                 text = ""
                 for e in r.iter_text():
-                    if not e.startswith("data: "): # 真是优秀的返回
+                    if not e.startswith("data: "):  # 真是优秀的返回
                         yield {"error_code": 500, "text": f"minimax返回错误的结果：{e}"}
                         continue
 
@@ -95,7 +97,7 @@ class MiniMaxWorker(ApiModelWorker):
             "texts": params.texts,
             "type": "query" if params.to_query else "db",
         }
-        
+
         with get_httpx_client() as client:
             r = client.post(url, headers=headers, json=data).json()
             if embeddings := r.get("vectors"):

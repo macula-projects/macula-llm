@@ -17,18 +17,18 @@
 # @author: rain
 # @Date：2023/11/17
 
-import asyncio
 import argparse
+import asyncio
+import multiprocessing as mp
 import os
 import sys
-import multiprocessing as mp
 from multiprocessing import Process
 
 from configs import (VERSION, LOG_PATH, LLM_MODELS, EMBEDDING_MODEL, FSCHAT_MODEL_WORKERS, logger, log_verbose)
-from server.utils import llm_device, embedding_device, fschat_openai_api_address, get_model_worker_config
 from server.controller import run_controller
 from server.model_worker import run_model_worker
 from server.openai_api import run_openai_api
+from server.utils import llm_device, embedding_device, fschat_openai_api_address, get_model_worker_config
 
 # 设置numexpr最大线程数，默认为CPU核心数
 try:

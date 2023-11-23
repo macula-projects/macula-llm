@@ -1,8 +1,10 @@
-from fastchat.conversation import Conversation
-from server.model_workers.base import *
-from fastchat import conversation as conv
 import sys
 from typing import List, Dict, Iterator, Literal
+
+from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
+from server.model_workers.base import *
 
 
 class ChatGLMWorker(ApiModelWorker):

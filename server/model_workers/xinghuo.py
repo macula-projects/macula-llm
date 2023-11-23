@@ -1,12 +1,14 @@
-from fastchat.conversation import Conversation
-from server.model_workers.base import *
-from fastchat import conversation as conv
-import sys
 import json
-from server.model_workers import SparkApi
-import websockets
-from server.utils import iter_over_async, asyncio
+import sys
 from typing import List, Dict
+
+import websockets
+from fastchat import conversation as conv
+from fastchat.conversation import Conversation
+
+from server.model_workers import SparkApi
+from server.model_workers.base import *
+from server.utils import iter_over_async, asyncio
 
 
 async def request(appid, api_key, api_secret, Spark_url, domain, question, temperature, max_token):
@@ -37,7 +39,7 @@ class XingHuoWorker(ApiModelWorker):
             **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
-        kwargs.setdefault("context_len", 8000) # TODO: V1模型的最大长度为4000，需要自行修改
+        kwargs.setdefault("context_len", 8000)  # TODO: V1模型的最大长度为4000，需要自行修改
         super().__init__(**kwargs)
         self.version = version
 
@@ -46,9 +48,9 @@ class XingHuoWorker(ApiModelWorker):
         params.load_config(self.model_names[0])
 
         version_mapping = {
-            "v1.5": {"domain": "general", "url": "ws://spark-api.xf-yun.com/v1.1/chat","max_tokens": 4000},
-            "v2.0": {"domain": "generalv2", "url": "ws://spark-api.xf-yun.com/v2.1/chat","max_tokens": 8000},
-            "v3.0": {"domain": "generalv3", "url": "ws://spark-api.xf-yun.com/v3.1/chat","max_tokens": 8000},
+            "v1.5": {"domain": "general", "url": "ws://spark-api.xf-yun.com/v1.1/chat", "max_tokens": 4000},
+            "v2.0": {"domain": "generalv2", "url": "ws://spark-api.xf-yun.com/v2.1/chat", "max_tokens": 8000},
+            "v3.0": {"domain": "generalv3", "url": "ws://spark-api.xf-yun.com/v3.1/chat", "max_tokens": 8000},
         }
 
         def get_version_details(version_key):

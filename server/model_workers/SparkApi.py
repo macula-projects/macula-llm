@@ -2,10 +2,10 @@ import base64
 import datetime
 import hashlib
 import hmac
-from urllib.parse import urlparse
 from datetime import datetime
 from time import mktime
 from urllib.parse import urlencode
+from urllib.parse import urlparse
 from wsgiref.handlers import format_date_time
 
 

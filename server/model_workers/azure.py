@@ -1,10 +1,12 @@
+import json
 import sys
+from typing import List, Dict
+
+from fastchat import conversation as conv
 from fastchat.conversation import Conversation
+
 from server.model_workers.base import *
 from server.utils import get_httpx_client
-from fastchat import conversation as conv
-import json
-from typing import List, Dict
 
 
 class AzureWorker(ApiModelWorker):
@@ -18,7 +20,7 @@ class AzureWorker(ApiModelWorker):
             **kwargs,
     ):
         kwargs.update(model_names=model_names, controller_addr=controller_addr, worker_addr=worker_addr)
-        kwargs.setdefault("context_len", 8000) #TODO 16K模型需要改成16384
+        kwargs.setdefault("context_len", 8000)  # TODO 16K模型需要改成16384
         super().__init__(**kwargs)
         self.version = version
 
@@ -51,9 +53,9 @@ class AzureWorker(ApiModelWorker):
                         if chunk := choices[0].get("delta", {}).get("content"):
                             text += chunk
                             yield {
-                                    "error_code": 0,
-                                    "text": text
-                                }
+                                "error_code": 0,
+                                "text": text
+                            }
 
     def get_embeddings(self, params):
         # TODO: 支持embeddings

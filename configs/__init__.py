@@ -21,5 +21,4 @@ from .basic_config import *
 from .model_config import *
 from .server_config import *
 
-
 VERSION = "5.0.0"
