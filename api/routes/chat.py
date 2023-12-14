@@ -8,6 +8,7 @@ from sse_starlette import EventSourceResponse
 from starlette.concurrency import run_in_threadpool
 
 from api.models import GENERATE_ENGINE
+from api.utils.compat import model_dump
 from api.utils.protocol import ChatCompletionCreateParams, Role
 from api.utils.request import (
     handle_request,
@@ -32,16 +33,13 @@ async def create_chat_completion(
     if (not request.messages) or request.messages[-1]["role"] == Role.ASSISTANT:
         raise HTTPException(status_code=400, detail="Invalid request")
 
-    request, stop_token_ids = await handle_request(request, engine.stop)
+    request = await handle_request(request, engine.stop)
     request.max_tokens = request.max_tokens or 1024
 
-    params = request.model_dump(exclude={"messages"})
-    params.update(
-        dict(
-            prompt_or_messages=request.messages,
-            echo=False,
-            stop_token_ids=stop_token_ids,
-        )
+    params = model_dump(request, exclude={"messages"})
+    params |= dict(
+        prompt_or_messages=request.messages,
+        echo=False,
     )
     logger.debug(f"==== request ====\n{params}")
 

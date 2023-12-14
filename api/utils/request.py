@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from starlette.concurrency import iterate_in_threadpool
 
 from api.config import SETTINGS
+from api.utils.compat import model_json, model_dump
 from api.utils.constants import ErrorCode
 from api.utils.protocol import (
     ChatCompletionCreateParams,
@@ -33,55 +34,55 @@ llama_inner_lock = Lock()
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
 ):
-    if SETTINGS.api_keys:
-        if auth is None or (token := auth.credentials) not in SETTINGS.api_keys:
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "error": {
-                        "message": "",
-                        "type": "invalid_request_error",
-                        "param": None,
-                        "code": "invalid_api_key",
-                    }
-                },
-            )
-        return token
-    else:
+    if not SETTINGS.api_keys:
         # api_keys not set; allow all
         return None
+    if auth is None or (token := auth.credentials) not in SETTINGS.api_keys:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": {
+                    "message": "",
+                    "type": "invalid_request_error",
+                    "param": None,
+                    "code": "invalid_api_key",
+                }
+            },
+        )
+    return token
 
 
 def create_error_response(code: int, message: str) -> JSONResponse:
-    return JSONResponse(ErrorResponse(message=message, code=code).model_dump(), status_code=500)
+    return JSONResponse(model_dump(ErrorResponse(message=message, code=code)), status_code=500)
 
 
 async def handle_request(
     request: Union[CompletionCreateParams, ChatCompletionCreateParams],
     stop: Dict[str, Any] = None,
     chat: bool = True,
-):
+) -> Union[Union[CompletionCreateParams, ChatCompletionCreateParams], JSONResponse]:
     error_check_ret = check_requests(request)
     if error_check_ret is not None:
         return error_check_ret
 
     # stop settings
-    _stop, stop_token_ids = [], []
+    _stop, _stop_token_ids = [], []
     if stop is not None:
-        stop_token_ids = stop.get("token_ids", [])
+        _stop_token_ids = stop.get("token_ids", [])
         _stop = stop.get("strings", [])
 
     request.stop = request.stop or []
     if isinstance(request.stop, str):
         request.stop = [request.stop]
 
-    if chat:
-        if "qwen" in SETTINGS.model_name.lower() and request.functions:
-            request.stop.append("Observation:")
+    if chat and ("qwen" in SETTINGS.model_name.lower() and request.functions):
+        request.stop.append("Observation:")
 
     request.stop = list(set(_stop + request.stop))
+    request.stop_token_ids = request.stop_token_ids or []
+    request.stop_token_ids = list(set(_stop_token_ids + request.stop_token_ids))
 
-    return request, stop_token_ids
+    return request
 
 
 def check_requests(request: Union[CompletionCreateParams, ChatCompletionCreateParams]) -> Optional[JSONResponse]:
@@ -116,14 +117,13 @@ def check_requests(request: Union[CompletionCreateParams, ChatCompletionCreatePa
             ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.top_p} is greater than the maximum of 1 - 'temperature'",
         )
-    if request.stop is not None and (
-            not isinstance(request.stop, str) and not isinstance(request.stop, list)
-    ):
+    if request.stop is None or isinstance(request.stop, (str, list)):
+        return None
+    else:
         return create_error_response(
             ErrorCode.PARAM_OUT_OF_RANGE,
             f"{request.stop} is not valid under any of the given schemas - 'stop'",
         )
-    return None
 
 
 async def get_event_publisher(
@@ -133,10 +133,10 @@ async def get_event_publisher(
 ):
     async with inner_send_chan:
         try:
-            if SETTINGS.engine != "vllm":
+            if SETTINGS.engine not in ["vllm", "tgi"]:
                 async for chunk in iterate_in_threadpool(iterator):
                     if isinstance(chunk, BaseModel):
-                        chunk = chunk.model_dump_json()
+                        chunk = model_json(chunk)
                     elif isinstance(chunk, dict):
                         chunk = json.dumps(chunk, ensure_ascii=False)
 
@@ -150,7 +150,7 @@ async def get_event_publisher(
                         raise anyio.get_cancelled_exc_class()()
             else:
                 async for chunk in iterator:
-                    chunk = chunk.model_dump_json()
+                    chunk = model_json(chunk)
                     await inner_send_chan.send(dict(data=chunk))
                     if await request.is_disconnected():
                         raise anyio.get_cancelled_exc_class()()

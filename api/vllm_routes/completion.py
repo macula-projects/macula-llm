@@ -20,6 +20,7 @@ from sse_starlette import EventSourceResponse
 from vllm.outputs import RequestOutput
 
 from api.models import GENERATE_ENGINE
+from api.utils.compat import model_dump
 from api.utils.protocol import CompletionCreateParams
 from api.utils.request import (
     handle_request,
@@ -62,10 +63,13 @@ async def create_completion(
         raise HTTPException(status_code=400, detail="suffix is not currently supported")
 
     request.max_tokens = request.max_tokens or 128
-    request, stop_token_ids = await handle_request(request, engine.prompt_adapter.stop, chat=False)
+    request = await handle_request(request, engine.prompt_adapter.stop, chat=False)
 
-    params = request.model_dump()
-    params.update(dict(stop_token_ids=stop_token_ids, prompt_or_messages=request.prompt))
+    if isinstance(request.prompt, list):
+        request.prompt = request.prompt[0]
+
+    params = model_dump(request, exclude={"prompt"})
+    params |= dict(prompt_or_messages=request.prompt)
     logger.debug(f"==== request ====\n{params}")
 
     request_id: str = f"cmpl-{str(uuid.uuid4())}"
@@ -87,11 +91,9 @@ async def create_completion(
         # Non-streaming response
         final_res: RequestOutput = None
         async for res in generator:
-            if raw_request is not None:
-                if await raw_request.is_disconnected():
-                    # Abort the request if the client disconnects.
-                    await engine.model.abort(request_id)
-                    return
+            if raw_request is not None and await raw_request.is_disconnected():
+                await engine.model.abort(request_id)
+                return
             final_res = res
 
         assert final_res is not None
@@ -169,7 +171,7 @@ def create_logprobs(
 
 async def create_completion_stream(
     generator: AsyncIterator, params: Dict[str, Any], request_id: str, tokenizer,
-    ) -> AsyncIterator:
+) -> AsyncIterator:
     n = params.get("n", 1)
     previous_texts = [""] * n
     previous_num_tokens = [0] * n
@@ -180,7 +182,7 @@ async def create_completion_stream(
             output.text = output.text.replace("�", "")
             delta_text = output.text[len(previous_texts[i]):]
 
-            if params.get("logprobs", None) is not None:
+            if params.get("logprobs") is not None:
                 logprobs = create_logprobs(
                     tokenizer,
                     output.token_ids[previous_num_tokens[i]:],
@@ -208,7 +210,7 @@ async def create_completion_stream(
             )
 
             if output.finish_reason is not None:
-                if params.get("logprobs", None) is not None:
+                if params.get("logprobs") is not None:
                     logprobs = Logprobs(
                         text_offset=[], token_logprobs=[], tokens=[], top_logprobs=[]
                     )

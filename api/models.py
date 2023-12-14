@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from api.config import SETTINGS
+from api.utils.compat import model_dump
 
 
 def create_app() -> FastAPI:
@@ -40,10 +41,10 @@ def create_generate_model():
         apply_ntk_scaling_patch(SETTINGS.alpha)
 
     include = {
-        "model_name", "quantize", "device", "device_map", "num_gpus",
+        "model_name", "quantize", "device", "device_map", "num_gpus", "pre_seq_len",
         "load_in_8bit", "load_in_4bit", "using_ptuning_v2", "dtype", "resize_embeddings"
     }
-    kwargs = SETTINGS.model_dump(include=include)
+    kwargs = model_dump(SETTINGS, include=include)
 
     model, tokenizer = load_model(
         model_name_or_path=SETTINGS.model_path,
@@ -78,7 +79,7 @@ def create_vllm_engine():
         "tokenizer_mode", "trust_remote_code", "tensor_parallel_size",
         "dtype", "gpu_memory_utilization", "max_num_seqs",
     }
-    kwargs = SETTINGS.model_dump(include=include)
+    kwargs = model_dump(SETTINGS, include=include)
     engine_args = AsyncEngineArgs(
         model=SETTINGS.model_path,
         max_num_batched_tokens=SETTINGS.max_num_batched_tokens if SETTINGS.max_num_batched_tokens > 0 else None,
@@ -118,7 +119,7 @@ def create_llama_cpp_engine():
         "n_gpu_layers", "main_gpu", "tensor_split", "n_batch", "n_threads",
         "n_threads_batch", "rope_scaling_type", "rope_freq_base", "rope_freq_scale"
     }
-    kwargs = SETTINGS.model_dump(include=include)
+    kwargs = model_dump(SETTINGS, include=include)
     engine = Llama(
         model_path=SETTINGS.model_path,
         n_ctx=SETTINGS.context_length if SETTINGS.context_length > 0 else 2048,
@@ -128,6 +129,20 @@ def create_llama_cpp_engine():
     logger.info("Using llama.cpp engine")
 
     return LlamaCppEngine(engine, SETTINGS.model_name, SETTINGS.chat_template)
+
+
+def create_tgi_engine():
+    """ get llama.cpp generate engine for chat or completion. """
+    try:
+        from text_generation import AsyncClient
+        from api.core.tgi import TGIEngine
+    except ImportError:
+        return None
+
+    client = AsyncClient(SETTINGS.tgi_endpoint)
+    logger.info("Using TGI engine")
+
+    return TGIEngine(client, SETTINGS.model_name, SETTINGS.chat_template)
 
 
 # fastapi app
@@ -144,6 +159,8 @@ if (not SETTINGS.only_embedding) and SETTINGS.activate_inference:
         GENERATE_ENGINE = create_vllm_engine()
     elif SETTINGS.engine == "llama.cpp":
         GENERATE_ENGINE = create_llama_cpp_engine()
+    elif SETTINGS.engine == "tgi":
+        GENERATE_ENGINE = create_tgi_engine()
 else:
     GENERATE_ENGINE = None
 

@@ -6,9 +6,11 @@ import dotenv
 from loguru import logger
 from pydantic import BaseModel, Field
 
+from api.utils.compat import model_json, disable_warnings
+
 dotenv.load_dotenv()
-# Disable warning for model_name settings
-BaseModel.model_config["protected_namespaces"] = ()
+
+disable_warnings(BaseModel)
 
 
 def get_bool_env(key, default="false"):
@@ -17,7 +19,7 @@ def get_bool_env(key, default="false"):
 
 def get_env(key, default):
     val = os.environ.get(key, "")
-    return val if val else default
+    return val or default
 
 
 class Settings(BaseModel):
@@ -115,6 +117,11 @@ class Settings(BaseModel):
     using_ptuning_v2: Optional[bool] = Field(
         default=get_bool_env("USING_PTUNING_V2"),
         description="Whether to load the model using ptuning_v2."
+    )
+    pre_seq_len: Optional[int] = Field(
+        default=int(get_env("PRE_SEQ_LEN", 128)),
+        ge=0,
+        description="PRE_SEQ_LEN for ptuning_v2."
     )
 
     # context related
@@ -232,9 +239,15 @@ class Settings(BaseModel):
         description="RoPE frequency scaling factor",
     )
 
+    # support for tgi
+    tgi_endpoint: Optional[str] = Field(
+        default=get_env("TGI_ENDPOINT", None),
+        description="Text Generate Inference Endpoint.",
+    )
+
 
 SETTINGS = Settings()
-logger.debug(f"SETTINGS: {SETTINGS.model_dump_json(indent=4)}")
+logger.debug(f"SETTINGS: {model_json(SETTINGS, indent=4)}")
 if SETTINGS.gpus:
     if len(SETTINGS.gpus.split(",")) < SETTINGS.num_gpus:
         raise ValueError(

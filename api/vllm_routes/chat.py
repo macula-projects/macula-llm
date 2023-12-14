@@ -27,9 +27,10 @@ from sse_starlette import EventSourceResponse
 from vllm.outputs import RequestOutput
 
 from api.models import GENERATE_ENGINE
+from api.utils.compat import model_dump, model_parse
 from api.utils.protocol import Role, ChatCompletionCreateParams
-from api.utils.request import check_api_key
 from api.utils.request import (
+    check_api_key,
     handle_request,
     get_event_publisher,
 )
@@ -52,16 +53,13 @@ async def create_chat_completion(
     if (not request.messages) or request.messages[-1]["role"] == Role.ASSISTANT:
         raise HTTPException(status_code=400, detail="Invalid request")
 
-    request, stop_token_ids = await handle_request(request, engine.prompt_adapter.stop)
+    request = await handle_request(request, engine.prompt_adapter.stop)
     request.max_tokens = request.max_tokens or 512
 
-    params = request.model_dump(exclude={"messages"})
-    params.update(
-        dict(
+    params = model_dump(request, exclude={"messages"})
+    params |= dict(
             prompt_or_messages=request.messages,
             echo=False,
-            stop_token_ids=stop_token_ids,
-        )
     )
     logger.debug(f"==== request ====\n{params}")
 
@@ -84,11 +82,9 @@ async def create_chat_completion(
         # Non-streaming response
         final_res: RequestOutput = None
         async for res in generator:
-            if raw_request is not None:
-                if await raw_request.is_disconnected():
-                    # Abort the request if the client disconnects.
-                    await engine.model.abort(request_id)
-                    return
+            if raw_request is not None and await raw_request.is_disconnected():
+                await engine.model.abort(request_id)
+                return
             final_res = res
 
         assert final_res is not None
@@ -106,7 +102,7 @@ async def create_chat_completion(
                         output.text, functions, tools,
                     )
                     output.text = res
-                except:
+                except Exception as e:
                     traceback.print_exc()
                     logger.warning("Failed to parse tool call")
 
@@ -120,7 +116,7 @@ async def create_chat_completion(
                 finish_reason = "function_call"
             elif isinstance(function_call, dict) and "function" in function_call:
                 finish_reason = "tool_calls"
-                tool_calls = [ChatCompletionMessageToolCall.model_validate(function_call)]
+                tool_calls = [model_parse(ChatCompletionMessageToolCall, function_call)]
                 message = ChatCompletionMessage(
                     role="assistant",
                     content=output.text,
